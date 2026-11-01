@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #F8F9FC;
+    --bg-card: #FFFFFF;
+    --bg-sidebar: #FFFFFF;
+    --text-primary: #171923;
+    --text-secondary: #777D8A;
+    --accent: #6857E8;
+    --accent-hover: #5846D4;
+    --accent-bg: #F0EDFF;
+    --border: #E9EAF0;
+    --success: #16A36A;
+    --warning: #E9A23B;
+    --danger: #E05252;
+  }
+
+  .dark {
+    --bg-main: #0E1117;
+    --bg-card: #161A23;
+    --bg-sidebar: #13161F;
+    --text-primary: #F0F2F5;
+    --text-secondary: #9BA1B0;
+    --accent: #7C6CF0;
+    --accent-hover: #8D7EF5;
+    --accent-bg: #1F1C38;
+    --border: #232838;
+    --success: #20C282;
+    --warning: #F5B041;
+    --danger: #F06565;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D5D8E2;
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #2D3345;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A8AEBF;
+}
+
+/* Glass & Card subtle shadows */
+.card-shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+}
+
+.card-hover-shadow {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-hover-shadow:hover {
+  box-shadow: 0 8px 24px -4px rgba(104, 87, 232, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
+}
+
+.glass-nav {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
+.dark .glass-nav {
+  background-color: rgba(14, 17, 23, 0.85);
+}
+

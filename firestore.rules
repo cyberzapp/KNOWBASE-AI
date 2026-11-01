@@ -1,0 +1,130 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isWorkspaceMember(workspaceId) {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/workspaces/$(workspaceId)/members/$(request.auth.uid)) ||
+        exists(/databases/$(database)/documents/workspace_members/$(workspaceId + '_' + request.auth.uid))
+      );
+    }
+
+    function getWorkspaceMemberRole(workspaceId) {
+      return get(/databases/$(database)/documents/workspaces/$(workspaceId)/members/$(request.auth.uid)).data.role;
+    }
+
+    function isWorkspaceAdminOrOwner(workspaceId) {
+      return isWorkspaceMember(workspaceId) && (
+        getWorkspaceMemberRole(workspaceId) in ['owner', 'admin']
+      );
+    }
+
+    // 1. User Profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isUser(userId);
+      allow update: if isUser(userId);
+      allow delete: if false; // protect user profiles
+    }
+
+    // 2. Global membership index for fast query
+    match /workspace_members/{memberId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // 3. Workspaces
+    match /workspaces/{workspaceId} {
+      allow read: if isAuthenticated() && (
+        resource.data.ownerId == request.auth.uid ||
+        isWorkspaceMember(workspaceId)
+      );
+      allow create: if isAuthenticated();
+      allow update: if isWorkspaceAdminOrOwner(workspaceId);
+      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+
+      // Subcollection: Members
+      match /members/{memberId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow create, update: if isWorkspaceAdminOrOwner(workspaceId) || request.auth.uid == memberId;
+        allow delete: if isWorkspaceAdminOrOwner(workspaceId);
+      }
+
+      // Subcollection: Invitations
+      match /invitations/{invitationId} {
+        allow read: if isAuthenticated();
+        allow create, update: if isWorkspaceAdminOrOwner(workspaceId);
+        allow delete: if isWorkspaceAdminOrOwner(workspaceId);
+      }
+
+      // Subcollection: Collections
+      match /collections/{collectionId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow create, update, delete: if isWorkspaceMember(workspaceId);
+      }
+
+      // Subcollection: Documents
+      match /documents/{documentId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow create, update: if isWorkspaceMember(workspaceId);
+        allow delete: if isWorkspaceMember(workspaceId);
+      }
+
+      // Subcollection: Chunks (vector retrieval & embeddings)
+      match /chunks/{chunkId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow write: if isWorkspaceMember(workspaceId);
+      }
+
+      // Subcollection: Conversations
+      match /conversations/{conversationId} {
+        allow read, write: if isWorkspaceMember(workspaceId);
+
+        // Subcollection: Messages
+        match /messages/{messageId} {
+          allow read, write: if isWorkspaceMember(workspaceId);
+        }
+      }
+
+      // Subcollection: Activity logs
+      match /activity/{activityId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow write: if isWorkspaceMember(workspaceId);
+      }
+
+      // Subcollection: Notifications
+      match /notifications/{notificationId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow update: if isWorkspaceMember(workspaceId);
+        allow create: if isWorkspaceMember(workspaceId);
+        allow delete: if isWorkspaceAdminOrOwner(workspaceId);
+      }
+
+      // Subcollection: Usage & Limits
+      match /usage/{periodId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow write: if isAuthenticated();
+      }
+    }
+
+    // 4. Subscriptions & Payments
+    match /subscriptions/{subscriptionId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only server Cloud Functions can update subscription records
+    }
+
+    match /paymentEvents/{eventId} {
+      allow read, write: if false; // Server-only audit log
+    }
+  }
+}
+

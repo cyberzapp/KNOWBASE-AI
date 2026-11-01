@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Path pattern: workspaces/{workspaceId}/documents/{documentFile}
+    match /workspaces/{workspaceId}/documents/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated()
+                   && request.resource.size < 50 * 1024 * 1024; // 50MB max limit
+      allow delete: if isAuthenticated();
+    }
+
+    // User avatars
+    match /users/{userId}/avatar/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024; // 5MB limit
+    }
+  }
+}
+
