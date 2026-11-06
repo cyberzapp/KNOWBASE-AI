@@ -203,3 +203,4 @@ firebase deploy
 2. **Untrusted Content Sanitization**: Uploaded document content is strictly formatted as reference material in system prompts, neutralizing prompt injection attacks.
 3. **No Frontend Secrets**: `GEMINI_API_KEY` and `RAZORPAY_KEY_SECRET` reside exclusively in Cloud Functions.
 4. **Payment Integrity**: Subscriptions are never activated client-side. The server verifies HMAC-SHA256 signatures before updating Firestore quotas.
+
